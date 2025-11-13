@@ -19,7 +19,7 @@ jobs:
           
       - name: Download latest rules and sing-box
         run: |
-          # 下载最新的 geosite.db 和 geoip.db
+          # 下载最新 geosite.db 和 geoip.db
           curl -L -o work/geosite.db https://github.com/lyc8503/sing-box-rules/releases/latest/download/geosite.db
           curl -L -o work/geoip.db https://github.com/lyc8503/sing-box-rules/releases/latest/download/geoip.db
                     
@@ -36,7 +36,7 @@ jobs:
           chmod +x work/sing-box-*/sing-box
           mv work/sing-box-*/sing-box work/sing-box-1.8.8
 
-      - name: Export rules with latest version
+      - name: Export and compile rules with latest version
         working-directory: work
         run: |
           # 使用最新版本导出规则
@@ -48,7 +48,12 @@ jobs:
           ./sing-box-latest geosite export google-gemini -o ./output/geosite-google-gemini.json
           ./sing-box-latest geosite export geolocation-!cn -o ./output/geosite-geolocation-!cn.json
 
-      - name: Export rules with v1.8.8
+          # 编译 JSON 为二进制规则集（.srs）
+          for f in ./output/*.json; do
+            ./sing-box-latest rule-set compile --output "${f%.json}.srs" "$f"
+          done
+
+      - name: Export and compile rules with v1.8.8
         working-directory: work
         run: |
           # 使用 1.8.8 版本导出规则
@@ -60,7 +65,13 @@ jobs:
           ./sing-box-1.8.8 geosite export openai -o ./output-1.8.8/geosite-openai.json
           ./sing-box-1.8.8 geosite export google-gemini -o ./output-1.8.8/geosite-google-gemini.json
           ./sing-box-1.8.8 geosite export geolocation-!cn -o ./output-1.8.8/geosite-geolocation-!cn.json
-          rm -rf geo* sing* 
+
+          # 编译 JSON 为二进制规则集（.srs）
+          for f in ./output-1.8.8/*.json; do
+            ./sing-box-1.8.8 rule-set compile --output "${f%.json}.srs" "$f"
+          done
+
+          rm -rf geo* sing*
 
       - name: Commit and push changes to main branch
         run: |
